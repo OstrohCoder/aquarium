@@ -1,13 +1,20 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>aquarium</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Віртуальний акваріум</title>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+
+  <div id="hud">
+    <h1>Віртуальний акваріум</h1>
+    <p>ЛКМ — обертати · колесо — масштаб · клік по дну — тест raycaster</p>
+  </div>
+
+  <div id="loader"><div id="loader-bar"></div></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
 </html>

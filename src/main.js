@@ -1,60 +1,90 @@
 import './style.css'
-import heroImg from './assets/hero.png'
-import javascriptLogo from './assets/javascript.svg'
-import viteLogo from './assets/vite.svg'
-import { setupCounter } from './counter.js'
+import * as THREE from 'three'
+import { TANK } from './config.js'
+import { Renderer } from './core/Renderer.js'
+import { CameraRig } from './core/Camera.js'
+import { Loaders } from './core/Loaders.js'
+import { Input } from './core/Input.js'
+import { Gui } from './ui/Gui.js'
 
-document.querySelector('#app').innerHTML = `
-<section id="center">
-  <div class="hero">
-    <img src="${heroImg}" class="base" width="170" height="179">
-    <img src="${javascriptLogo}" class="framework" alt="JavaScript logo"/>
-    <img src="${viteLogo}" class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/main.js</code> and save to test <code>HMR</code></p>
-  </div>
-  <button id="counter" type="button" class="counter"></button>
-</section>
+const canvas = document.querySelector('#scene')
 
-<div class="ticks"></div>
+const scene = new THREE.Scene()
+scene.background = new THREE.Color('#031a22')
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#documentation-icon"></use></svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank">
-          <img class="logo" src="${viteLogo}" alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-          <img class="button-icon" src="${javascriptLogo}" alt="">
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true"><use href="/icons.svg#social-icon"></use></svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li><a href="https://github.com/vitejs/vite" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#github-icon"></use></svg>GitHub</a></li>
-      <li><a href="https://chat.vite.dev/" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#discord-icon"></use></svg>Discord</a></li>
-      <li><a href="https://x.com/vite_js" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#x-icon"></use></svg>X.com</a></li>
-      <li><a href="https://bsky.app/profile/vite.dev" target="_blank"><svg class="button-icon" role="presentation" aria-hidden="true"><use href="/icons.svg#bluesky-icon"></use></svg>Bluesky</a></li>
-    </ul>
-  </div>
-</section>
+const renderer = new Renderer(canvas)
+const cameraRig = new CameraRig(canvas, window.innerWidth / window.innerHeight)
+const loaders = new Loaders()
+const input = new Input(canvas)
+new Gui({ renderer, cameraRig })
 
-<div class="ticks"></div>
-<section id="spacer"></section>
-`
+const hemi = new THREE.HemisphereLight('#9fe7ff', '#0b2a33', 0.7)
+scene.add(hemi)
 
-setupCounter(document.querySelector('#counter'))
+const sun = new THREE.DirectionalLight('#ffffff', 2.4)
+sun.position.set(2, 6, 3)
+sun.castShadow = true
+sun.shadow.mapSize.set(2048, 2048)
+sun.shadow.camera.left = -5
+sun.shadow.camera.right = 5
+sun.shadow.camera.top = 5
+sun.shadow.camera.bottom = -5
+sun.shadow.bias = -0.0005
+scene.add(sun)
+
+const floor = new THREE.Mesh(
+  new THREE.PlaneGeometry(TANK.width, TANK.depth),
+  new THREE.MeshStandardMaterial({ color: '#c9b283', roughness: 0.95 })
+)
+floor.rotation.x = -Math.PI / 2
+floor.receiveShadow = true
+scene.add(floor)
+
+const tankOutline = new THREE.LineSegments(
+  new THREE.EdgesGeometry(new THREE.BoxGeometry(TANK.width, TANK.height, TANK.depth)),
+  new THREE.LineBasicMaterial({ color: '#4fd8ff', transparent: true, opacity: 0.5 })
+)
+tankOutline.position.y = TANK.height / 2
+scene.add(tankOutline)
+
+const probe = new THREE.Mesh(
+  new THREE.SphereGeometry(0.18, 48, 24),
+  new THREE.MeshStandardMaterial({ color: '#ff8a3d', roughness: 0.35, metalness: 0.1 })
+)
+probe.castShadow = true
+probe.position.set(0, 0.5, 0)
+scene.add(probe)
+
+input.addEventListener('click', () => {
+  const hit = input.intersectObjects([floor], cameraRig.camera)[0]
+  if (hit) probe.userData.target = hit.point.clone()
+})
+
+function update(dt, elapsed) {
+  const t = probe.userData.target
+  if (t) probe.position.x += (t.x - probe.position.x) * Math.min(dt * 4, 1)
+  if (t) probe.position.z += (t.z - probe.position.z) * Math.min(dt * 4, 1)
+  probe.position.y = 0.5 + Math.sin(elapsed * 2) * 0.08
+}
+
+let last = performance.now()
+const start = last
+
+function tick(now) {
+  const dt = Math.min((now - last) / 1000, 0.05)
+  last = now
+
+  update(dt, (now - start) / 1000)
+  cameraRig.update()
+  renderer.render(scene, cameraRig.camera)
+
+  requestAnimationFrame(tick)
+}
+requestAnimationFrame(tick)
+
+window.addEventListener('resize', () => {
+  renderer.resize(window.innerWidth, window.innerHeight)
+  cameraRig.resize(window.innerWidth / window.innerHeight)
+})
+
+loaders.done()
