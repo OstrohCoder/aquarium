@@ -1,9 +1,10 @@
 import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { waterUniforms } from '../world/WaterShared.js'
+import { SPECIES } from '../fish/Species.js'
 
 export class Gui {
-  constructor({ renderer, cameraRig, lighting }) {
+  constructor({ renderer, cameraRig, lighting, fishSystem }) {
     const gui = new GUI({ title: 'Акваріум' })
     const r = renderer.instance
 
@@ -37,6 +38,17 @@ export class Gui {
       .onChange(() => lighting.apply())
     light.add(waterUniforms.uOpacity, 'value', 0, 0.8, 0.01).name('Каламутність')
     light.add(waterUniforms.uCausticsIntensity, 'value', 0, 3, 0.01).name('Каустики')
+
+
+    const fishFolder = gui.addFolder('Мешканці')
+    const counts = {}
+    const refresh = () => Object.keys(SPECIES).forEach((id) => (counts[id] = fishSystem.count(id)))
+    refresh()
+    Object.values(SPECIES).forEach((spec) => {
+      fishFolder.add(counts, spec.id).name(spec.name).listen().disable()
+      fishFolder.add({ add: () => { fishSystem.add(spec.id); refresh() } }, 'add').name(`+ ${spec.name}`)
+      fishFolder.add({ remove: () => { fishSystem.remove(spec.id); refresh() } }, 'remove').name(`− ${spec.name}`)
+    })
 
     this.gui = gui
   }

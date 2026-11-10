@@ -7,6 +7,7 @@ import { Input } from './core/Input.js'
 import { Lighting } from './world/Lighting.js'
 import { Tank } from './world/Tank.js'
 import { Substrate } from './world/Substrate.js'
+import { FishSystem } from './fish/FishSystem.js'
 import { Gui } from './ui/Gui.js'
 
 const canvas = document.querySelector('#scene')
@@ -25,11 +26,19 @@ const tank = new Tank()
 const substrate = new Substrate(loaders)
 scene.add(tank.group, substrate.mesh)
 
-new Gui({ renderer, cameraRig, lighting })
+const fishSystem = new FishSystem({
+  bounds: tank.swimBounds,
+  ground: (x, z) => substrate.heightAt(x, z)
+})
+scene.add(fishSystem.group)
+fishSystem.populate()
+
+new Gui({ renderer, cameraRig, lighting, fishSystem })
 
 function update(dt, elapsed) {
   tank.update(elapsed)
   lighting.update(elapsed)
+  fishSystem.update(dt, input.inside ? input.getRay(cameraRig.camera) : null)
 }
 
 let last = performance.now()
