@@ -4,7 +4,7 @@ import { waterUniforms } from '../world/WaterShared.js'
 import { SPECIES } from '../fish/Species.js'
 
 export class Gui {
-  constructor({ renderer, cameraRig, lighting, fishSystem }) {
+  constructor({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles }) {
     const gui = new GUI({ title: 'Акваріум' })
     const r = renderer.instance
 
@@ -49,6 +49,11 @@ export class Gui {
       fishFolder.add({ add: () => { fishSystem.add(spec.id); refresh() } }, 'add').name(`+ ${spec.name}`)
       fishFolder.add({ remove: () => { fishSystem.remove(spec.id); refresh() } }, 'remove').name(`− ${spec.name}`)
     })
+
+    const feed = gui.addFolder('Годування і повітря')
+    feed.add({ feed: () => foodSystem.dropRandom() }, 'feed').name('Покормити')
+    feed.add(foodSystem.params, 'amount', 1, 30, 1).name('Гранул за раз')
+    feed.add(bubbles.params, 'rate', 0, 30, 1).name('Бульбашки / с')
 
     this.gui = gui
   }
