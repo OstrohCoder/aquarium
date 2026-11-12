@@ -10,7 +10,10 @@ export const waterUniforms = {
   uSunDir: { value: new THREE.Vector3(0.3, 1, 0.4).normalize() },
   uSunColor: { value: new THREE.Color('#ffffff') },
   uCausticsIntensity: { value: 0.9 },
-  uCausticsColor: { value: new THREE.Color('#d6f6ff') }
+  uCausticsColor: { value: new THREE.Color('#d6f6ff') },
+  uMurk: { value: 0 },
+  uMurkColor: { value: new THREE.Color('#5f7233') },
+  uGodrays: { value: 1 }
 }
 
 export function withOutputChunks(source) {

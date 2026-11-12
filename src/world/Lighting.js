@@ -101,6 +101,7 @@ export class Lighting {
     waterUniforms.uShallow.value.set(this.params.shallow)
     waterUniforms.uDeep.value.set(this.params.deep)
     waterUniforms.uSunColor.value.set(p.sun)
+    waterUniforms.uGodrays.value = Math.min(1, p.sunI / 3.2) * b
     waterUniforms.uSunDir.value.copy(this.sun.position).sub(this.sun.target.position).normalize()
     waterUniforms.uCausticsColor.value.set(p.sun).lerp(new THREE.Color('#bff3ff'), 0.5)
 

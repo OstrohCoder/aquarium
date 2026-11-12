@@ -24,7 +24,8 @@ export class FishSystem {
       groups: this.groups,
       obstacles: this.obstacles,
       ray: null,
-      hungerRate: 0.012,
+      hungerRate: 0.003,
+      speedScale: 1,
       onEat: null
     }
   }
@@ -88,7 +89,7 @@ export class FishSystem {
   }
 
   count(id) {
-    return this.fish.filter((fish) => fish.spec.id === id).length
+    return this.fish.filter((fish) => !fish.dead && fish.spec.id === id).length
   }
 
   update(dt, ray) {
@@ -102,5 +103,14 @@ export class FishSystem {
 
     this.ctx.ray = ray
     for (const fish of this.fish) fish.update(dt, this.ctx)
+
+    for (let i = this.fish.length - 1; i >= 0; i--) {
+      const fish = this.fish[i]
+      if (fish.dead && fish.deadTime > 25) {
+        this.fish.splice(i, 1)
+        this.group.remove(fish.mesh)
+        fish.dispose()
+      }
+    }
   }
 }

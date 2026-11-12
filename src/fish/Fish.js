@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { Behavior } from './Behavior.js'
+import { WATER_HEIGHT } from '../config.js'
 
 const TAU = Math.PI * 2
 const forward = new THREE.Vector3()
@@ -8,6 +9,9 @@ const axisZ = new THREE.Vector3()
 const axisY = new THREE.Vector3()
 const basis = new THREE.Matrix4()
 const target = new THREE.Quaternion()
+
+const white = new THREE.Color('#ffffff')
+const sick = new THREE.Color('#6f7a60')
 
 export class Fish {
   constructor(spec, factory, position) {
@@ -27,6 +31,11 @@ export class Fish {
     this.velocity = new THREE.Vector3(Math.cos(heading), 0, Math.sin(heading)).multiplyScalar(spec.behavior.speed[1] * 0.5)
 
     this.hunger = Math.random() * 0.4
+    this.health = 100
+    this.dead = false
+    this.deadTime = 0
+    this.flip = 0
+
     this.cycle = Math.random() * TAU
     this.yawRate = 0
     this.heading = Math.atan2(-this.velocity.z, this.velocity.x)
@@ -36,6 +45,10 @@ export class Fish {
   }
 
   update(dt, ctx) {
+    if (this.dead) {
+      this.updateDead(dt)
+      return
+    }
     this.behavior.update(dt, ctx)
     this.orient(dt, false)
     this.animate(dt)
@@ -82,6 +95,28 @@ export class Fish {
     this.swim.uAmp.value = swim.amp * (0.45 + 0.7 * Math.min(ratio, 1.2))
     this.swim.uBend.value = -THREE.MathUtils.clamp(this.yawRate * 0.02, -0.1, 0.1)
     this.swim.uFlap.value = swim.flap * (0.5 + 0.5 * Math.min(ratio, 1))
+  }
+
+  setHealth(value) {
+    this.health = THREE.MathUtils.clamp(value, 0, 100)
+    const k = Math.pow(1 - this.health / 100, 1.5)
+    this.materials[0].color.copy(white).lerp(sick, k * 0.8)
+  }
+
+  die() {
+    this.dead = true
+    this.velocity.set(0, 0, 0)
+  }
+
+  updateDead(dt) {
+    this.deadTime += dt
+    const step = Math.min(dt * 2, Math.PI - this.flip)
+    this.flip += step
+    this.mesh.rotateX(step)
+    this.mesh.position.y = Math.min(this.mesh.position.y + dt * 0.05, WATER_HEIGHT - 0.05)
+    this.swim.uAmp.value *= 0.9
+    this.swim.uFlap.value *= 0.9
+    this.swim.uBend.value *= 0.9
   }
 
   dispose() {

@@ -6,7 +6,7 @@ import { DECOR_OPTIONS } from '../world/Decor.js'
 import { VEGETATION_OPTIONS } from '../world/Plants.js'
 
 export class Gui {
-  constructor({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles, decor, plants }) {
+  constructor({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles, decor, plants, ecosystem }) {
     const gui = new GUI({ title: 'Акваріум' })
     const r = renderer.instance
 
@@ -41,7 +41,6 @@ export class Gui {
     light.add(waterUniforms.uOpacity, 'value', 0, 0.8, 0.01).name('Каламутність')
     light.add(waterUniforms.uCausticsIntensity, 'value', 0, 3, 0.01).name('Каустики')
 
-
     const fishFolder = gui.addFolder('Мешканці')
     const counts = {}
     const refresh = () => Object.keys(SPECIES).forEach((id) => (counts[id] = fishSystem.count(id)))
@@ -67,6 +66,14 @@ export class Gui {
     scenery.add(state, 'vegetation', VEGETATION_OPTIONS).name('Рослинність').onChange(rebuild)
     scenery.add({ shuffle: () => { state.seed += 1; rebuild() } }, 'shuffle').name('Перегенерувати')
     scenery.add(state, 'sway', 0, 2.5, 0.01).name('Течія').onChange((v) => plants.setSway(v))
+
+    const eco = gui.addFolder('Екосистема')
+    eco.add(ecosystem.params, 'filter', 0, 1, 0.01).name('Фільтр')
+    eco.add(ecosystem.params, 'heater', 16, 32, 0.5).name('Нагрівач, °C')
+    eco.add(ecosystem.params, 'speed', 1, 40, 1).name('Швидкість екосистеми')
+    eco.add({ change: () => ecosystem.waterChange() }, 'change').name('Підміна води')
+
+    light.add(waterUniforms.uGodrays, 'value', 0, 2, 0.01).name('Промені світла')
 
     this.gui = gui
   }

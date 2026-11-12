@@ -32,8 +32,8 @@ export class Behavior {
     this.timer -= dt
     if (this.timer <= 0 || pos.distanceTo(this.target) < 0.35) this.pickTarget(ctx)
 
-    const minSpeed = b.speed[0]
-    let maxSpeed = b.speed[1]
+    const minSpeed = b.speed[0] * ctx.speedScale
+    let maxSpeed = b.speed[1] * ctx.speedScale
     const food = this.findFood(ctx)
 
     if (food) {
@@ -159,7 +159,7 @@ export class Behavior {
     separation.set(0, 0, 0)
 
     for (const other of ctx.fish) {
-      if (other === fish) continue
+      if (other === fish || other.dead) continue
       tmp.copy(pos).sub(other.mesh.position)
       const d = tmp.length()
       const same = other.spec.id === fish.spec.id

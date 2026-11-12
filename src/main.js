@@ -13,6 +13,9 @@ import { FoodSystem } from './world/Food.js'
 import { Bubbles } from './world/Bubbles.js'
 import { Decor } from './world/Decor.js'
 import { Plants } from './world/Plants.js'
+import { GodRays } from './world/GodRays.js'
+import { Ecosystem } from './ecosystem/Ecosystem.js'
+import { Hud } from './ui/Hud.js'
 import { Gui } from './ui/Gui.js'
 
 const canvas = document.querySelector('#scene')
@@ -47,11 +50,17 @@ scene.add(decor.group, plants.group)
 decor.set('rocks', 1)
 plants.set('seaweed', 1)
 
+const godRays = new GodRays()
+scene.add(godRays.group)
+
+const ecosystem = new Ecosystem({ fishSystem, foodSystem })
+const hud = new Hud({ ecosystem, fishSystem, input, cameraRig })
+
 input.addEventListener('click', () => {
   foodSystem.dropFromRay(input.getRay(cameraRig.camera))
 })
 
-new Gui({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles, decor, plants })
+new Gui({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles, decor, plants, ecosystem })
 
 function update(dt, elapsed) {
   tank.update(elapsed)
@@ -60,6 +69,8 @@ function update(dt, elapsed) {
   foodSystem.update(dt, elapsed)
   fishSystem.update(dt, input.inside ? input.getRay(cameraRig.camera) : null)
   bubbles.update(dt, elapsed)
+  ecosystem.update(dt)
+  hud.update(dt)
 }
 
 let last = performance.now()
