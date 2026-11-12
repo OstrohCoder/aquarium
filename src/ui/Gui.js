@@ -2,9 +2,11 @@ import GUI from 'lil-gui'
 import * as THREE from 'three'
 import { waterUniforms } from '../world/WaterShared.js'
 import { SPECIES } from '../fish/Species.js'
+import { DECOR_OPTIONS } from '../world/Decor.js'
+import { VEGETATION_OPTIONS } from '../world/Plants.js'
 
 export class Gui {
-  constructor({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles }) {
+  constructor({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles, decor, plants }) {
     const gui = new GUI({ title: 'Акваріум' })
     const r = renderer.instance
 
@@ -54,6 +56,17 @@ export class Gui {
     feed.add({ feed: () => foodSystem.dropRandom() }, 'feed').name('Покормити')
     feed.add(foodSystem.params, 'amount', 1, 30, 1).name('Гранул за раз')
     feed.add(bubbles.params, 'rate', 0, 30, 1).name('Бульбашки / с')
+
+    const scenery = gui.addFolder('Декор і рослинність')
+    const state = { decor: 'rocks', vegetation: 'seaweed', seed: 1, sway: 1 }
+    const rebuild = () => {
+      decor.set(state.decor, state.seed)
+      plants.set(state.vegetation, state.seed)
+    }
+    scenery.add(state, 'decor', DECOR_OPTIONS).name('Декор').onChange(rebuild)
+    scenery.add(state, 'vegetation', VEGETATION_OPTIONS).name('Рослинність').onChange(rebuild)
+    scenery.add({ shuffle: () => { state.seed += 1; rebuild() } }, 'shuffle').name('Перегенерувати')
+    scenery.add(state, 'sway', 0, 2.5, 0.01).name('Течія').onChange((v) => plants.setSway(v))
 
     this.gui = gui
   }

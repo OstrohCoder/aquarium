@@ -49,6 +49,7 @@ export class Behavior {
     this.flock(ctx, b)
     this.cursor(ctx, b)
     this.bound(ctx, b)
+    this.avoid(ctx)
 
     acc.clampLength(0, b.accel * 2.5 * (1 + 2 * this.panic))
     vel.addScaledVector(acc, dt)
@@ -238,6 +239,19 @@ export class Behavior {
     }
   }
 
+  avoid(ctx) {
+    const fish = this.fish
+    const pos = fish.mesh.position
+    const accel = fish.spec.behavior.accel
+
+    for (const o of ctx.obstacles) {
+      tmp.copy(pos).sub(o.center)
+      const dist = tmp.length()
+      const reach = o.radius + fish.size * 0.45 + 0.12
+      if (dist < reach && dist > 1e-4) acc.addScaledVector(tmp, (accel * 3 * (1 - dist / reach)) / dist)
+    }
+  }
+
   clamp(ctx, b) {
     const pos = this.fish.mesh.position
     const vel = this.fish.velocity
@@ -251,6 +265,13 @@ export class Behavior {
     if (!b.bottom) {
       if (pos.y < min.y) { pos.y = min.y; vel.y = Math.abs(vel.y) }
       if (pos.y > max.y) { pos.y = max.y; vel.y = -Math.abs(vel.y) }
+    }
+
+    for (const o of ctx.obstacles) {
+      tmp.copy(pos).sub(o.center)
+      const dist = tmp.length()
+      const minimum = o.radius + this.fish.size * 0.3
+      if (dist < minimum && dist > 1e-4) pos.copy(o.center).addScaledVector(tmp, minimum / dist)
     }
   }
 }

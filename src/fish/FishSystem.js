@@ -14,6 +14,7 @@ export class FishSystem {
     this.fish = []
     this.groups = new Map()
     this.foods = []
+    this.obstacles = []
 
     this.ctx = {
       bounds,
@@ -21,6 +22,7 @@ export class FishSystem {
       fish: this.fish,
       foods: this.foods,
       groups: this.groups,
+      obstacles: this.obstacles,
       ray: null,
       hungerRate: 0.012,
       onEat: null

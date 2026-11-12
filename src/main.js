@@ -11,6 +11,8 @@ import { FishSystem } from './fish/FishSystem.js'
 import { PhysicsWorld } from './physics/PhysicsWorld.js'
 import { FoodSystem } from './world/Food.js'
 import { Bubbles } from './world/Bubbles.js'
+import { Decor } from './world/Decor.js'
+import { Plants } from './world/Plants.js'
 import { Gui } from './ui/Gui.js'
 
 const canvas = document.querySelector('#scene')
@@ -39,13 +41,17 @@ const physics = new PhysicsWorld(ground)
 const foodSystem = new FoodSystem({ physics, foods: fishSystem.foods, ground })
 const bubbles = new Bubbles(ground)
 scene.add(foodSystem.mesh, bubbles.group)
-foodSystem.onEaten = (food) => bubbles.burst(food.position, 2)
+const decor = new Decor({ physics, ground, obstacles: fishSystem.obstacles })
+const plants = new Plants({ ground, obstacles: fishSystem.obstacles })
+scene.add(decor.group, plants.group)
+decor.set('rocks', 1)
+plants.set('seaweed', 1)
 
 input.addEventListener('click', () => {
   foodSystem.dropFromRay(input.getRay(cameraRig.camera))
 })
 
-new Gui({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles })
+new Gui({ renderer, cameraRig, lighting, fishSystem, foodSystem, bubbles, decor, plants })
 
 function update(dt, elapsed) {
   tank.update(elapsed)
