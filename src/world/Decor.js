@@ -4,6 +4,7 @@ import { applyCaustics } from './Caustics.js'
 import { createRandom } from './random.js'
 import { buildRock, buildDriftwood, buildColumn, buildAmphora } from './DecorGeometry.js'
 import { createWoodTexture } from './DecorTextures.js'
+import { assets } from './Assets.js'
 
 export const DECOR_OPTIONS = {
   'Скелі': 'rocks',
@@ -40,6 +41,7 @@ export class Decor {
   }
 
   set(name, seed = 1) {
+    this.seed = seed
     this.clear()
     this.current = name
     const rng = createRandom(Math.floor(seed) * 7919 + 13)
@@ -56,7 +58,7 @@ export class Decor {
     this.group.children.slice().forEach((child) => {
       this.group.remove(child)
       child.traverse((object) => {
-        if (object.geometry) object.geometry.dispose()
+        if (object.geometry && !object.geometry.userData.shared) object.geometry.dispose()
       })
     })
     this.bodies.forEach((body) => this.physics.remove(body))
@@ -80,6 +82,60 @@ export class Decor {
     return mesh
   }
 
+  addModel(model, x, z, { rotation = 0, scale = 1, sink = 0.03, lowest = false } = {}) {
+    const sx = model.size.x * scale
+    const sy = model.size.y * scale
+    const sz = model.size.z * scale
+    const cos = Math.cos(rotation)
+    const sin = Math.sin(rotation)
+    const tall = sy > 1.5 * Math.max(sx, sz)
+    const alongX = sx >= sz
+    const length = alongX ? sx : sz
+    const thick = alongX ? sz : sx
+    const r = Math.max(0.05, tall ? 0.45 * Math.max(sx, sz) : 0.45 * Math.min(thick, 1.2 * sy))
+    const n = tall ? Math.max(2, Math.ceil(sy / (r * 1.6))) : Math.max(1, Math.round(length / (r * 1.6)))
+
+    const spots = []
+    for (let k = 0; k < n; k++) {
+      const t = n === 1 ? 0.5 : k / (n - 1)
+      if (tall) {
+        spots.push({ wx: x, wz: z, up: r + t * (sy - 2 * r) })
+      } else {
+        const d = (t - 0.5) * (length - 2 * r)
+        const lx = alongX ? d : 0
+        const lz = alongX ? 0 : d
+        spots.push({ wx: x + lx * cos + lz * sin, wz: z - lx * sin + lz * cos, up: Math.min(r, sy / 2) })
+      }
+    }
+
+    const samples = tall
+      ? [[x, z]]
+      : [-0.5, -0.25, 0, 0.25, 0.5].map((t) => {
+          const d = t * length
+          const lx = alongX ? d : 0
+          const lz = alongX ? 0 : d
+          return [x + lx * cos + lz * sin, z - lx * sin + lz * cos]
+        })
+    const baseY = lowest
+      ? Math.min(...samples.map(([wx, wz]) => this.ground(wx, wz))) - sink * sy
+      : Math.max(...spots.map((s) => this.ground(s.wx, s.wz))) - sink * sy
+
+    const group = new THREE.Group()
+    model.parts.forEach(({ geometry, material }) => {
+      const mesh = new THREE.Mesh(geometry, material)
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      group.add(mesh)
+    })
+    group.position.set(x, baseY, z)
+    group.rotation.y = rotation
+    group.scale.setScalar(scale)
+    group.rotation.z -= 0.2
+    this.group.add(group)
+
+    spots.forEach((s) => this.solid(s.wx, baseY + s.up, s.wz, r))
+  }
+
   addRock(rng, x, z, sx, sy, sz, solid = true) {
     const y = this.ground(x, z)
     this.place(
@@ -100,6 +156,11 @@ export class Decor {
   }
 
   addDriftwood(rng, x, z, scale, rotation) {
+    if (assets.trunk) {
+      this.addModel(assets.trunk, x, z, { rotation, scale: scale * 1.1, sink: 0.6 })
+      return
+    }
+
     const { geometry, points } = buildDriftwood(rng.range(1, 90))
     const cos = Math.cos(rotation)
     const sin = Math.sin(rotation)

@@ -16,6 +16,7 @@ import { Plants } from './world/Plants.js'
 import { GodRays } from './world/GodRays.js'
 import { Ecosystem } from './ecosystem/Ecosystem.js'
 import { Hud } from './ui/Hud.js'
+import { loadAssets } from './world/Assets.js'
 import { Gui } from './ui/Gui.js'
 
 const canvas = document.querySelector('#scene')
@@ -49,6 +50,10 @@ const plants = new Plants({ ground, obstacles: fishSystem.obstacles })
 scene.add(decor.group, plants.group)
 decor.set('rocks', 1)
 plants.set('seaweed', 1)
+loadAssets().then(() => {
+  decor.set(decor.current, decor.seed)
+  plants.set(plants.current, plants.seed)
+})
 
 const godRays = new GodRays()
 scene.add(godRays.group)

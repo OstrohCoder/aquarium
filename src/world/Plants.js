@@ -1,7 +1,8 @@
 import * as THREE from 'three'
-import { WATER_HEIGHT } from '../config.js'
+import { WATER_HEIGHT, TANK } from '../config.js'
 import { waterUniforms } from './WaterShared.js'
 import { injectCaustics, applyCaustics } from './Caustics.js'
+import { assets } from './Assets.js'
 import swayGLSL from '../shaders/plantSway.vert.glsl'
 import { createRandom } from './random.js'
 import { buildBlade, buildSword, buildBranchCoral, buildBrainCoral, buildTubeCoral } from './PlantGeometry.js'
@@ -16,14 +17,7 @@ export const VEGETATION_OPTIONS = {
 const dummy = new THREE.Object3D()
 const corals = ['#ff6f61', '#ff9e4a', '#d65db1', '#8e6bdc', '#f4d35e', '#4fc3b8']
 
-function swayMaterial(uniforms) {
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    side: THREE.DoubleSide,
-    roughness: 0.55,
-    metalness: 0
-  })
-
+function swayify(material, uniforms) {
   material.onBeforeCompile = (shader) => {
     injectCaustics(shader)
     shader.uniforms.uTime = waterUniforms.uTime
@@ -34,8 +28,14 @@ function swayMaterial(uniforms) {
       .replace('#include <common>', `#include <common>\n${swayGLSL}`)
       .replace('#include <begin_vertex>', '#include <begin_vertex>\n    transformed = swayDisplace(transformed);')
   }
-
   return material
+}
+
+function swayMaterial(uniforms) {
+  return swayify(
+    new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.55, metalness: 0 }),
+    uniforms
+  )
 }
 
 export class Plants {
@@ -76,6 +76,7 @@ export class Plants {
   }
 
   set(name, seed = 1) {
+    this.seed = seed
     this.clear()
     this.current = name
     const rng = createRandom(Math.floor(seed) * 104729 + 7)
@@ -126,6 +127,36 @@ export class Plants {
     this.group.add(mesh)
   }
 
+  grassClumps(rng, count, xr, zr) {
+    const model = assets.grass
+    const half = 0.5 * Math.max(model.size.x, model.size.z)
+    const hx = TANK.width / 2
+    const hz = TANK.depth / 2
+    const items = []
+
+    for (let i = 0; i < count; i++) {
+      const s = rng.range(0.25, 0.5)
+      const m = s * (half + 0.3) + 0.05
+      const spot = this.spot(
+        rng,
+        [Math.max(xr[0], -hx + m), Math.min(xr[1], hx - m)],
+        [Math.max(zr[0], -hz + m), Math.min(zr[1], hz - m)],
+        0.08
+      )
+      if (!spot) continue
+      items.push({ x: spot[0], z: spot[1], ry: rng.range(0, Math.PI * 2), sx: s, sy: s, sz: s })
+    }
+
+    assets.grass.parts.forEach(({ geometry, material }) => {
+      if (!material.userData.swayed) {
+        swayify(material, this.uniforms.grass)
+        material.side = THREE.DoubleSide
+        material.userData.swayed = true
+      }
+      this.instanced(geometry, material, items, () => new THREE.Color('#ffffff'))
+    })
+  }
+
   kelpClumps(rng, count) {
     const items = []
     for (let c = 0; c < count; c++) {
@@ -162,6 +193,11 @@ export class Plants {
   }
 
   grassField(rng, count, xr, zr) {
+    if (assets.grass) {
+      this.grassClumps(rng, Math.ceil(count / 5), xr, zr)
+      return
+    }
+
     const items = []
     for (let i = 0; i < count; i++) {
       const spot = this.spot(rng, xr, zr, 0.08)
