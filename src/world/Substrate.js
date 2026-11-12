@@ -70,7 +70,7 @@ export class Substrate {
         const z = a[1] + (b[1] - a[1]) * t
         const top = this.heightAt(x, z)
         const s = run + t * length
-        positions.push(x, top, z, x, 0, z)
+        positions.push(x, top, z, x, -0.02, z)
         uvs.push(s / this.width, top / this.depth, s / this.width, 0)
         colors.push(1, 1, 1, 0.35, 0.35, 0.35)
       }

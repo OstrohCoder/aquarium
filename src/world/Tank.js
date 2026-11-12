@@ -32,7 +32,7 @@ export class Tank {
   buildCabinet() {
     const { width: W, depth: D, glass: g } = TANK
     const wood = new THREE.MeshStandardMaterial({ color: '#1d1611', roughness: 0.65, metalness: 0.05 })
-    this.box(W + 0.4, 1.0, D + 0.4, wood, 0, -g - 0.5, 0)
+    this.box(W + 0.4, 1.0, D + 0.4, wood, 0, -g - 0.505, 0)
   }
 
   buildGlass() {
@@ -72,7 +72,7 @@ export class Tank {
     this.box(W + 2 * g + t, h, t, rim, 0, H + h / 2, -D / 2 - g / 2, options)
     this.box(t, h, D + 2 * g, rim, -W / 2 - g / 2, H + h / 2, 0, options)
     this.box(t, h, D + 2 * g, rim, W / 2 + g / 2, H + h / 2, 0, options)
-    this.box(W + 2 * g + t, h, D + 2 * g + t, rim, 0, -g - h / 2, 0, options)
+    this.box(W + 2 * g + t, h, D + 2 * g + t, rim, 0, -g - h / 2 - 0.003, 0, options)
   }
 
   buildRoom() {
